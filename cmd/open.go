@@ -29,7 +29,28 @@ func (open *OpenCmd) Run() error {
 
 // AddUrlToTapGroup adds the given url to the given tap group
 func openTapGroup(outputW io.Writer, tapGroup string, urlLike string, cm configManager.ConfigManager, br browser.Browser) error {
-	urls, err := cm.GetUrls(tapGroup)
+	tapGroups, err := cm.GetTapGroups()
+	if err != nil {
+		return err
+	}
+	if len(tapGroups) == 0 {
+		return errors.New("the given tap group does not exist")
+	}
+
+	tapGroupLikeLower := strings.ToLower(tapGroup)
+	tapGroups = helpers.Filter(tapGroups, func(tg string) bool {
+		return fuzzy.Match(tapGroupLikeLower, strings.ToLower(tg))
+	})
+
+	if len(tapGroups) == 0 {
+		return errors.New("no matches found in the saved tap groups")
+	}
+
+	if len(tapGroups) > 1 {
+		return errors.New("more than one tap group matched")
+	}
+
+	urls, err := cm.GetUrls(tapGroups[0])
 	if err != nil {
 		return err
 	}

@@ -35,6 +35,19 @@ func (cm *jsonConfigManager) GetConfig() (map[string][]string, error) {
 	return result, nil
 }
 
+func (cm *jsonConfigManager) GetTapGroups() ([]string, error) {
+	db, err := cm.GetConfig()
+	if err != nil {
+		return []string{}, err
+	}
+
+	keys := make([]string, 0, len(db))
+	for k := range db {
+		keys = append(keys, k)
+	}
+	return keys, nil
+}
+
 func (cm *jsonConfigManager) GetUrls(tapGroup string) ([]string, error) {
 	db, err := cm.GetConfig()
 	if err != nil {

@@ -4,6 +4,9 @@ type ConfigManager interface {
 	//GetConfig gets the config instance. this should be a map from a tap group to the list of urls
 	GetConfig() (map[string][]string, error)
 
+	//GetTapGroups gets all saved tap groups
+	GetTapGroups() ([]string, error)
+
 	// AddUrl adds the given url to the given tap group. the tap group is created if it does not exist
 	AddUrl(url string, tapGroup string) error
 
