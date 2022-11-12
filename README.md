@@ -4,6 +4,12 @@ Save and open **links** from the command line with ease. A tap group is a collec
 e.g `work` tap group would contain links for work.
 e.g `uni` tap group would contain links for uni etc.
 
+## Installation
+
+1. Manually by downloading the binary from the release page
+1. Using go with `go install github.com/magdyamr542/browser-tab-groups@latest  `
+
+
 ## Features
 
 1. Group `urls` with a label
