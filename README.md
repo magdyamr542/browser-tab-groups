@@ -1,8 +1,8 @@
 # Browser tab groups
 
 Save and open **links** from the command line with ease. A tap group is a collection of links (urls) that belong together.
-e.g `work` tap group would contain links for work.
-e.g `uni` tap group would contain links for uni etc.
+
+Example: `work` tap group would contain links for work. `uni` tap group would contain links for uni etc.
 
 ## Installation
 
@@ -32,19 +32,18 @@ e.g `uni` tap group would contain links for uni etc.
 
 ## Workflow looks like this
 
-1.  `br add work https://enerxess.atlassian.net/jira/your-work`
-1.  `br add work https://bitbucket.org/exseffi`
-1.  `br add uni https://webmail.tu-dortmund.de/roundcubemail/`
+1.  `br add express-routing https://github.com/expressjs/express`
+1.  `br add express-routing https://expressjs.com/en/guide/routing.html`
 1.  `br ls`
 
     ```
     uni:
     https://webmail.tu-dortmund.de/roundcubemail/
 
-    work:
-    https://enerxess.atlassian.net/jira/your-work
-    https://bitbucket.org/exseffi
+    express-routing:
+    https://github.com/expressjs/express
+    https://expressjs.com/en/guide/routing.html
     ```
 
-1.  `br open work` would open the two links under the `work` group in the browser
-1.  `br open work bit` would open the link for **bitbucket** because it uses `fuzzy finding` to filter for links based on the user's input
+1.  `br open express` would open the two links under the `express-routing` group in the browser
+1.  `br open express git` would open the link for **express github** because it uses `fuzzy finding` to filter for links based on the user's input
