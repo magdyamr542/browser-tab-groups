@@ -9,7 +9,7 @@ import (
 
 // Removing a tap group
 type RmCmd struct {
-	TapGroup string `arg:"" name:"tap group" help:"the tap group to remove"`
+	TapGroups []string `arg:"" name:"path to tap group" help:"the path to the tap group to remove"`
 }
 
 func (rm *RmCmd) Run() error {
@@ -18,12 +18,12 @@ func (rm *RmCmd) Run() error {
 	if err != nil {
 		return err
 	}
-	return removeTapGroup(os.Stdout, jsonCmg, rm.TapGroup)
+	return removeTapGroup(os.Stdout, jsonCmg, rm.TapGroups...)
 }
 
 // removeTapGroup removes a saved tap group
-func removeTapGroup(outputW io.Writer, cm configManager.ConfigManager, tapGroup string) error {
-	err := cm.RemoveTapGroup(tapGroup)
+func removeTapGroup(outputW io.Writer, cm configManager.ConfigManager, path ...string) error {
+	err := cm.RemoveTapGroup(path...)
 	if err != nil {
 		return err
 	}
