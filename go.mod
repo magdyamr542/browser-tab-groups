@@ -1,6 +1,6 @@
 module github.com/magdyamr542/browser-tab-groups
 
-go 1.17
+go 1.19
 
 require (
 	github.com/alecthomas/kong v0.7.0
