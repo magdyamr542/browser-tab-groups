@@ -29,6 +29,27 @@ type jsonConfigManager struct {
 	homeDir  string
 }
 
+func (cm *jsonConfigManager) GetMatchingUrls(matcher func(tapGroupPath []string) bool) ([]string, error) {
+
+	urls := make([]string, 0)
+
+	onMatch := func(matchingUrls []string) {
+		urls = append(urls, matchingUrls...)
+	}
+
+	err := cm.ExecForMatchingTapGroup(matcher, onMatch)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if len(urls) == 0 {
+		return nil, fmt.Errorf("no matching tap groups found")
+	}
+
+	return urls, nil
+}
+
 func (cm *jsonConfigManager) GetConfig() (string, error) {
 
 	var result strings.Builder

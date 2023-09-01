@@ -26,7 +26,6 @@ func (open *OpenCmd) Run() error {
 }
 
 func openTapGroup(outputW io.Writer, tapGroups []string, cm configManager.ConfigManager, br browser.Browser) error {
-	urls := make([]string, 0)
 
 	matcher := func(tapGroupPath []string) bool {
 		if len(tapGroups) != len(tapGroupPath) {
@@ -43,12 +42,7 @@ func openTapGroup(outputW io.Writer, tapGroups []string, cm configManager.Config
 		return true
 	}
 
-	onMatch := func(matchingUrls []string) {
-		urls = append(urls, matchingUrls...)
-	}
-
-	err := cm.ExecForMatchingTapGroup(matcher, onMatch)
-
+	urls, err := cm.GetMatchingUrls(matcher)
 	if err != nil {
 		return err
 	}
