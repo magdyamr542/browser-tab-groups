@@ -211,7 +211,10 @@ func (cm *jsonConfigManager) refreshStorage(data Db) error {
 	}
 	defer f.Close()
 
-	file, _ := json.MarshalIndent(data, "", " ")
+	file, err := json.MarshalIndent(data, "", " ")
+	if err != nil {
+		return err
+	}
 
 	return os.WriteFile(storagePath, file, 0600)
 
