@@ -50,6 +50,29 @@ func (cm *jsonConfigManager) GetMatchingUrls(matcher func(tapGroupPath []string)
 	return urls, nil
 }
 
+func (cm *jsonConfigManager) OverrideConfigJson(newConfig []byte) error {
+	var newDb Db
+	if err := json.Unmarshal(newConfig, &newDb); err != nil {
+		return err
+	}
+	return cm.refreshStorage(newDb)
+}
+
+func (cm *jsonConfigManager) GetConfigJson() (string, error) {
+
+	db, err := cm.getDB()
+	if err != nil {
+		return "", err
+	}
+
+	byteValue, err := json.MarshalIndent(db, "", "  ")
+	if err != nil {
+		return "", err
+	}
+
+	return string(byteValue), nil
+}
+
 func (cm *jsonConfigManager) GetConfig() (string, error) {
 
 	var result strings.Builder
@@ -239,7 +262,7 @@ func (cm *jsonConfigManager) storagePath() string {
 	return filepath.Join(cm.homeDir, cm.dirPath, cm.fileName)
 }
 
-func NewJsonConfigManager() (ConfigManager, error) {
+func NewJsonConfigManager() (JsonConfigManager, error) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return nil, err

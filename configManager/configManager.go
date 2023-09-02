@@ -1,6 +1,17 @@
 package configManager
 
+type JsonConfigManager interface {
+	ConfigManager
+
+	//GetConfigJson returns the config as it's stored
+	GetConfigJson() (string, error)
+
+	//OverrideConfigJson overrides the stored config
+	OverrideConfigJson(newConfig []byte) error
+}
+
 type ConfigManager interface {
+
 	//GetConfig gets the config instance. this should be a map from a tap group to the list of urls
 	GetConfig() (string, error)
 

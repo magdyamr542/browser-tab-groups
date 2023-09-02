@@ -13,6 +13,7 @@ var CLI struct {
 	Add  cmd.AddCmd  `cmd:"" help:"Add a new url to a tap group"`
 	Open cmd.OpenCmd `cmd:"" help:"Open a tap group in the browser" aliases:"o,op"`
 	Rm   cmd.RmCmd   `cmd:"" help:"Remove a saved tap group" aliases:"remove"`
+	Edit cmd.EditCmd `cmd:"" help:"Edit the tap groups manually" aliases:"edit"`
 }
 
 func main() {
