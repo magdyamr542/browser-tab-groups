@@ -11,9 +11,9 @@ import (
 var CLI struct {
 	Ls   cmd.LsCmd   `cmd:"" help:"List all tab groups" aliases:"l,ls,list"`
 	Add  cmd.AddCmd  `cmd:"" help:"Add a new url to a tap group"`
-	Open cmd.OpenCmd `cmd:"" help:"Open a tap group in the browser" aliases:"o,op"`
+	Open cmd.OpenCmd `cmd:"" help:"Open a tap group in the browser. This opens all urls in the tap group" aliases:"o,op"`
 	Rm   cmd.RmCmd   `cmd:"" help:"Remove a saved tap group" aliases:"remove"`
-	Edit cmd.EditCmd `cmd:"" help:"Edit the tap groups manually" aliases:"edit"`
+	Edit cmd.EditCmd `cmd:"" help:"Edit the tap groups manually (JSON editing in you editor)" aliases:"edit"`
 }
 
 func main() {

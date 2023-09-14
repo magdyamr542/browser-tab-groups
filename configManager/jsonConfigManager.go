@@ -121,11 +121,9 @@ func (cm *jsonConfigManager) ExecForMatchingTapGroup(matcher func(tapGroupPath [
 	}
 
 	for _, leaf := range leafs {
-		leafPath := append(leaf.parentGroups, leaf.group)
-		leafPrefix := strings.Join(leafPath, ".")
-
+		leafPathStr := leaf.PathStr()
 		for matchingGroup := range matchingPrefixes {
-			if strings.HasPrefix(leafPrefix, matchingGroup) {
+			if strings.HasPrefix(leafPathStr, matchingGroup) {
 				leafUrls := leaf.value.([]string)
 				urls = append(urls, leafUrls...)
 			}
@@ -286,6 +284,11 @@ type scanInput struct {
 	value        any
 	parentGroups []string // if nil or has 0 length, this is the root
 	isLeaf       bool     // if true, value will be a slice of urls (slice of strings)
+}
+
+func (s *scanInput) PathStr() string {
+	leafPath := append(s.parentGroups, s.group)
+	return strings.Join(leafPath, ".")
 }
 
 // the scanner should return false to indicate to stop the walking
