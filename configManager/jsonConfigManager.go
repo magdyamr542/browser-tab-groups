@@ -76,8 +76,13 @@ func (cm *jsonConfigManager) GetConfigJson() (string, error) {
 func (cm *jsonConfigManager) GetConfig() (string, error) {
 
 	var result strings.Builder
-
+	first := true
 	if err := cm.walkDb(func(si scanInput) bool {
+		isRoot := len(si.parentGroups) == 0
+		if isRoot && !first {
+			result.WriteString("\n")
+		}
+
 		result.WriteString(fmt.Sprintf("%s%s\n", strings.Repeat(Tap, len(si.parentGroups)), si.group))
 		// Output the urls
 		if si.isLeaf {
@@ -86,6 +91,7 @@ func (cm *jsonConfigManager) GetConfig() (string, error) {
 			}
 		}
 
+		first = false
 		return false
 	}); err != nil {
 		return "", err
@@ -278,8 +284,8 @@ func NewJsonConfigManager() (JsonConfigManager, error) {
 type scanInput struct {
 	group        string
 	value        any
-	parentGroups []string
-	isLeaf       bool // if true, value will be a slice of urls (slice of strings)
+	parentGroups []string // if nil or has 0 length, this is the root
+	isLeaf       bool     // if true, value will be a slice of urls (slice of strings)
 }
 
 // the scanner should return false to indicate to stop the walking
