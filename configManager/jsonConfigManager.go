@@ -16,7 +16,6 @@ import (
 const Tap = "  "
 
 var (
-	errInputIsNotUrl          error = errors.New("the given input is not a url")
 	errUrlIsAlreadyInTapGroup error = errors.New("the url is already in the tap group")
 )
 
@@ -108,7 +107,7 @@ func (cm *jsonConfigManager) AddUrl(url string, tapGroups ...string) error {
 	// Validate
 	trimmedUrl := strings.TrimSpace(url)
 	if !helpers.IsUrl(strings.TrimSpace(trimmedUrl)) {
-		return errInputIsNotUrl
+		return fmt.Errorf("%q is not a url", url)
 	}
 
 	db, err := cm.getDB()
