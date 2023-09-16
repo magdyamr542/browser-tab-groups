@@ -42,9 +42,19 @@ func openTapGroup(outputW io.Writer, tapGroups []string, cm configManager.Config
 		return true
 	}
 
-	urls, err := cm.GetMatchingUrls(matcher)
+	tgs, err := cm.GetMatchingTapGroups(matcher)
 	if err != nil {
 		return err
+	}
+
+	urls := make([]string, 0)
+
+	for i := range tgs {
+		subUrls, err := tgs[i].Urls()
+		if err != nil {
+			return err
+		}
+		urls = append(urls, subUrls...)
 	}
 
 	if len(urls) == 0 {

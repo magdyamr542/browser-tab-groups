@@ -29,12 +29,12 @@ type jsonConfigManager struct {
 	homeDir  string
 }
 
-func (cm *jsonConfigManager) GetMatchingUrls(matcher func(tapGroupPath []string) bool) ([]string, error) {
+func (cm *jsonConfigManager) GetMatchingTapGroups(matcher func(tapGroupPath []string) bool) ([]TapGroup, error) {
 
-	urls := make([]string, 0)
+	tgs := make([]TapGroup, 0)
 
-	onMatch := func(matchingUrls []string) {
-		urls = append(urls, matchingUrls...)
+	onMatch := func(tg TapGroup) {
+		tgs = append(tgs, tg)
 	}
 
 	err := cm.ExecForMatchingTapGroup(matcher, onMatch)
@@ -43,11 +43,12 @@ func (cm *jsonConfigManager) GetMatchingUrls(matcher func(tapGroupPath []string)
 		return nil, err
 	}
 
-	if len(urls) == 0 {
+	if len(tgs) == 0 {
 		return nil, fmt.Errorf("no matching tap groups found")
 	}
 
-	return urls, nil
+	return tgs, nil
+
 }
 
 func (cm *jsonConfigManager) OverrideConfigJson(newConfig []byte) error {
@@ -73,67 +74,33 @@ func (cm *jsonConfigManager) GetConfigJson() (string, error) {
 	return string(byteValue), nil
 }
 
-func (cm *jsonConfigManager) GetConfig() (string, error) {
+func (cm *jsonConfigManager) ExecForMatchingTapGroup(matcher func(tapGroupPath []string) bool, exec func(TapGroup)) error {
 
-	var result strings.Builder
-	first := true
-	if err := cm.walkDb(func(si scanInput) bool {
-		isRoot := len(si.parentGroups) == 0
-		if isRoot && !first {
-			result.WriteString("\n")
-		}
-
-		result.WriteString(fmt.Sprintf("%s%s\n", strings.Repeat(Tap, len(si.parentGroups)), si.group))
-		// Output the urls
-		if si.isLeaf {
-			for _, url := range si.value.([]string) {
-				result.WriteString(fmt.Sprintf("%s%s\n", strings.Repeat(Tap, len(si.parentGroups)+1), url))
-			}
-		}
-
-		first = false
-		return false
-	}); err != nil {
-		return "", err
-	}
-
-	return result.String(), nil
-}
-func (cm *jsonConfigManager) ExecForMatchingTapGroup(matcher func(tapGroupPath []string) bool, exec func(urls []string)) error {
-	// e.g {"group.child.final" : {}}
-	matchingPrefixes := make(map[string]struct{})
-	leafs := make([]scanInput, 0)
-	urls := make([]string, 0)
-
-	if err := cm.walkDb(func(si scanInput) bool {
-		path := append(si.parentGroups, si.group)
-		if matcher(path) {
-			matchingPrefixes[strings.Join(path, ".")] = struct{}{}
-		}
-
-		if si.isLeaf {
-			leafs = append(leafs, si)
-		}
-
-		return false
-	}); err != nil {
+	db, err := cm.getDB()
+	if err != nil {
 		return err
 	}
 
-	for _, leaf := range leafs {
-		leafPathStr := leaf.PathStr()
-		for matchingGroup := range matchingPrefixes {
-			if strings.HasPrefix(leafPathStr, matchingGroup) {
-				leafUrls := leaf.value.([]string)
-				urls = append(urls, leafUrls...)
+	var retErr error
+
+	if err := cm.walk(func(si entry) bool {
+		if matcher(si.Path()) {
+
+			tg, err := NewTg(&db, si.Path())
+			if err != nil {
+				retErr = err
+				return true
 			}
+
+			exec(tg)
 		}
+
+		return false
+	}, db); err != nil {
+		return err
 	}
 
-	if len(urls) > 0 {
-		exec(urls)
-	}
-	return nil
+	return retErr
 }
 
 func (cm *jsonConfigManager) AddUrl(url string, tapGroups ...string) error {
@@ -203,7 +170,7 @@ func (cm *jsonConfigManager) RemoveTapGroup(path ...string) error {
 	}
 
 	found := false
-	if err := cm.walk(func(si scanInput) bool {
+	if err := cm.walk(func(si entry) bool {
 		if equal(append(si.parentGroups, si.group), path) {
 			found = true
 			// Delete it
@@ -279,20 +246,31 @@ func NewJsonConfigManager() (JsonConfigManager, error) {
 	return &cm, nil
 }
 
-type scanInput struct {
+type entry struct {
 	group        string
 	value        any
 	parentGroups []string // if nil or has 0 length, this is the root
 	isLeaf       bool     // if true, value will be a slice of urls (slice of strings)
 }
 
-func (s *scanInput) PathStr() string {
-	leafPath := append(s.parentGroups, s.group)
-	return strings.Join(leafPath, ".")
+func (s *entry) PathStr() string {
+	return strings.Join(s.Path(), ".")
+}
+
+func (s *entry) Path() []string {
+	return append(s.parentGroups, s.group)
+}
+
+func (s *entry) Root() bool {
+	return len(s.parentGroups) == 0
+}
+
+func (s *entry) EmptySpacePrefix() string {
+	return strings.Repeat(Tap, len(s.parentGroups))
 }
 
 // the scanner should return false to indicate to stop the walking
-type scanner func(scanInput) bool
+type scanner func(entry) bool
 
 // walk walks the JSON giving the scanner access to the different groups
 func (cm *jsonConfigManager) walk(scanner scanner, db Db) error {
@@ -308,7 +286,7 @@ func (cm *jsonConfigManager) walk(scanner scanner, db Db) error {
 		urlsAny, isLeaf := value.([]any)
 		if isLeaf {
 			urls := getUrls(urlsAny)
-			done = scanner(scanInput{group: currentGroup, value: urls, parentGroups: parentGroups, isLeaf: true})
+			done = scanner(entry{group: currentGroup, value: urls, parentGroups: parentGroups, isLeaf: true})
 			return done
 		}
 
@@ -316,7 +294,7 @@ func (cm *jsonConfigManager) walk(scanner scanner, db Db) error {
 		nestedDb, isNested := value.(map[string]any)
 		if isNested {
 			// First visit the parent
-			done = scanner(scanInput{group: currentGroup, value: value, parentGroups: parentGroups})
+			done = scanner(entry{group: currentGroup, value: value, parentGroups: parentGroups})
 			if done {
 				return true
 			}
@@ -383,14 +361,6 @@ func (cm *jsonConfigManager) getDB() (Db, error) {
 	return result, nil
 }
 
-// func (cm *jsonConfigManager) printDb(db Db) {
-// 	dbBytes, err := json.MarshalIndent(db, "", "  ")
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	fmt.Printf("%v\n", string(dbBytes))
-// }
-
 func getUrls(urlsAny []any) []string {
 	urls := make([]string, 0, len(urlsAny))
 	for _, u := range urlsAny {
@@ -411,4 +381,138 @@ func equal(s1, s2 []string) bool {
 	}
 
 	return true
+}
+
+type tg struct {
+	// The root db.
+	db *Db
+
+	// path to the current TapGroup.
+	path []string
+
+	urls []string
+}
+
+func (t *tg) Leaf() bool {
+	return len(t.urls) != 0
+}
+
+func NewTg(db *Db, path []string) (*tg, error) {
+	currDb := *db
+	tg := tg{db: db, path: path}
+
+	for i, key := range path {
+		nestedDb, ok := currDb[key]
+		if !ok {
+			return nil, fmt.Errorf("no such tap group: %s", strings.Join(path, "."))
+		}
+
+		urlsAny, isLeaf := nestedDb.([]any)
+		if isLeaf && i != len(path)-1 {
+			return nil, fmt.Errorf("no such tap group: %s", strings.Join(path, "."))
+		}
+
+		if isLeaf {
+			tg.urls = getUrls(urlsAny)
+		} else {
+
+			currDb = nestedDb.(map[string]any)
+		}
+
+	}
+	return &tg, nil
+}
+
+// tg implements the TapGroup interface.
+// Returns all urls under the given TapGroup.
+func (tg *tg) Urls() ([]string, error) {
+	if tg.Leaf() {
+		return tg.urls, nil
+	}
+
+	children, err := tg.Children()
+	if err != nil {
+		return nil, err
+	}
+
+	urls := make([]string, 0)
+	for i := range children {
+		childUrls, err := children[i].Urls()
+		if err != nil {
+			return nil, err
+		}
+		urls = append(urls, childUrls...)
+	}
+
+	return urls, nil
+}
+
+// Name of the current TapGroup.
+func (tg *tg) Name() string {
+	if len(tg.path) == 0 {
+		return ""
+	}
+	return tg.path[len(tg.path)-1]
+}
+
+// Path to the current TapGroup
+// E.g [work, ticket1, github].
+func (tg *tg) Path() []string {
+	return tg.path
+}
+
+// Returns all children of the current TapGroup.
+func (t *tg) Children() ([]TapGroup, error) {
+	if t.Leaf() {
+		return nil, nil
+	}
+
+	currDb := *t.db
+	for _, key := range t.path {
+		currDb = currDb[key].(map[string]any)
+	}
+
+	result := make([]TapGroup, 0)
+	for key := range currDb {
+		tg, err := NewTg(t.db, append(t.path, key))
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, tg)
+	}
+
+	return result, nil
+}
+
+// Formats the TapGroup as a string.
+func (tg *tg) String(prefix string) (string, error) {
+	var writer strings.Builder
+	writer.WriteString(fmt.Sprintf("%s%s\n", prefix, tg.Name()))
+
+	if tg.Leaf() {
+		for i, url := range tg.urls {
+			writer.WriteString(fmt.Sprintf("%s%s%s", prefix, Tap, url))
+			if i != len(tg.urls)-1 {
+				writer.WriteString("\n")
+			}
+		}
+		return writer.String(), nil
+	}
+
+	children, err := tg.Children()
+	if err != nil {
+		return "", err
+	}
+	for i := range children {
+		childStr, err := children[i].String(prefix + Tap)
+		if err != nil {
+			return "", err
+		}
+		writer.WriteString(childStr)
+
+		if i != len(children)-1 {
+			writer.WriteString("\n")
+		}
+	}
+	return writer.String(), nil
 }
