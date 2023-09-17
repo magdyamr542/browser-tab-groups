@@ -138,7 +138,7 @@ func (cm *jsonConfigManager) AddUrl(url string, tapGroups ...string) error {
 			if isLeaf {
 				// User trying to create a new tap group under an existing leaf. Error
 				if currentTapGroup != len(tapGroups)-1 {
-					return fmt.Errorf("can't create %q as a tap group inside %[2]q (%[2]q already contains urls)",
+					return fmt.Errorf("can't create %q as a tap group inside %[2]q. (%[2]q already contains urls)",
 						tapGroups[len(tapGroups)-1], tapGroup)
 				}
 
@@ -152,8 +152,14 @@ func (cm *jsonConfigManager) AddUrl(url string, tapGroups ...string) error {
 				added = true
 
 			} else {
-				// Go one level deeper
-				currentDb = currentDb[tapGroup].(Db)
+				// Current db is the last tapGroup. It doesn't contains any nestings or urls. Add the url here.
+				if len(currentDb[tapGroup].(Db)) == 0 && currentTapGroup+1 >= len(tapGroups) {
+					currentDb[tapGroup] = []string{url}
+					added = true
+				} else {
+					// Go one level deeper.
+					currentDb = currentDb[tapGroup].(Db)
+				}
 			}
 		}
 		currentTapGroup += 1

@@ -5,12 +5,20 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Debugging",
+      "name": "Debugging rm",
       "type": "go",
       "request": "launch",
       "mode": "debug",
       "program": "${workspaceFolder}/main.go",
-      "args": ["add", "versions", "https://www.goo.com"]
+      "args": ["rm", "1", "2", "3", "4"]
+    },
+    {
+      "name": "Debugging add",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "program": "${workspaceFolder}/main.go",
+      "args": ["add", "1", "https://ok.com"]
     }
   ]
 }
