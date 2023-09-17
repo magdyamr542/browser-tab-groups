@@ -13,7 +13,7 @@ import (
 	"github.com/magdyamr542/browser-tab-groups/helpers"
 )
 
-const Tap = "  "
+const Tap = "   "
 
 var (
 	errUrlIsAlreadyInTapGroup error = errors.New("the url is already in the tap group")
