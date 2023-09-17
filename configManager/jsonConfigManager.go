@@ -486,7 +486,8 @@ func (t *tg) Children() ([]TapGroup, error) {
 // Formats the TapGroup as a string.
 func (tg *tg) String(prefix string) (string, error) {
 	var writer strings.Builder
-	writer.WriteString(fmt.Sprintf("%s%s\n", prefix, tg.Name()))
+
+	writer.WriteString(fmt.Sprintf("%s%s\n", prefix, asBold(tg.Name())))
 
 	if tg.Leaf() {
 		for i, url := range tg.urls {
@@ -514,4 +515,8 @@ func (tg *tg) String(prefix string) (string, error) {
 		}
 	}
 	return writer.String(), nil
+}
+
+func asBold(str string) string {
+	return "\x1b[1m" + str + "\x1b[0m"
 }
