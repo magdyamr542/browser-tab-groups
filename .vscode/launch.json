@@ -10,7 +10,7 @@
       "request": "launch",
       "mode": "debug",
       "program": "${workspaceFolder}/main.go",
-      "args": ["ls"]
+      "args": ["add", "versions", "https://www.goo.com"]
     }
   ]
 }

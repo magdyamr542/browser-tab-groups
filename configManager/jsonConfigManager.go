@@ -19,7 +19,8 @@ var (
 	errUrlIsAlreadyInTapGroup error = errors.New("the url is already in the tap group")
 )
 
-type Db map[string]any
+type Db = map[string]any
+type LeafValues = []any
 
 // jsonConfigManager is an internal implementation for the config manager that saves the data as a json file
 type jsonConfigManager struct {
@@ -84,11 +85,10 @@ func (cm *jsonConfigManager) ExecForMatchingTapGroup(matcher func(tapGroupPath [
 
 	if err := cm.walk(func(si entry) bool {
 		if matcher(si.Path()) {
-
 			tg, err := NewTg(&db, si.Path())
 			if err != nil {
 				retErr = err
-				return true
+				return true // stop walking. found an error.
 			}
 
 			exec(tg)
@@ -118,12 +118,14 @@ func (cm *jsonConfigManager) AddUrl(url string, tapGroups ...string) error {
 	// Create the nested tap groups if necessary and add the url to the leaf
 	currentTapGroup := 0
 	currentDb := db
+	added := false
 	for currentTapGroup < len(tapGroups) {
 		tapGroup := tapGroups[currentTapGroup]
 		_, ok := currentDb[tapGroup]
 		if !ok {
 			// Last tap group. This maps to the list of urls
 			if currentTapGroup+1 >= len(tapGroups) {
+				added = true
 				currentDb[tapGroup] = []string{url}
 			} else {
 				// Go deeper
@@ -131,8 +133,8 @@ func (cm *jsonConfigManager) AddUrl(url string, tapGroups ...string) error {
 				currentDb = currentDb[tapGroup].(Db)
 			}
 		} else {
-			// Key exists
-			urlsAny, isLeaf := currentDb[tapGroup].([]any)
+			// Key exists.
+			urlsAny, isLeaf := currentDb[tapGroup].(LeafValues)
 			if isLeaf {
 				// User trying to create a new tap group under an existing leaf. Error
 				if currentTapGroup != len(tapGroups)-1 {
@@ -147,13 +149,19 @@ func (cm *jsonConfigManager) AddUrl(url string, tapGroups ...string) error {
 				}
 				currentUrls = append(currentUrls, url)
 				currentDb[tapGroup] = currentUrls
+				added = true
 
 			} else {
 				// Go one level deeper
-				currentDb = currentDb[tapGroup].(map[string]any)
+				currentDb = currentDb[tapGroup].(Db)
 			}
 		}
 		currentTapGroup += 1
+	}
+
+	if !added {
+		return fmt.Errorf("can't add url under %q. The path is a container for other tap groups and not for urls.",
+			strings.Join(tapGroups, "->"))
 	}
 
 	// cm.printDb(db)
@@ -175,7 +183,7 @@ func (cm *jsonConfigManager) RemoveTapGroup(path ...string) error {
 			// Delete it
 			currentDb := db
 			for _, parentGroup := range si.parentGroups {
-				currentDb = currentDb[parentGroup].(map[string]any)
+				currentDb = currentDb[parentGroup].(Db)
 			}
 			delete(currentDb, si.group)
 			return true
@@ -282,7 +290,7 @@ func (cm *jsonConfigManager) walk(scanner scanner, db Db) error {
 		}
 
 		// Leaf
-		urlsAny, isLeaf := value.([]any)
+		urlsAny, isLeaf := value.(LeafValues)
 		if isLeaf {
 			urls := getUrls(urlsAny)
 			done = scanner(entry{group: currentGroup, value: urls, parentGroups: parentGroups, isLeaf: true})
@@ -290,19 +298,21 @@ func (cm *jsonConfigManager) walk(scanner scanner, db Db) error {
 		}
 
 		// Nested
-		nestedDb, isNested := value.(map[string]any)
+		nestedDb, isNested := value.(Db)
 		if isNested {
-			// First visit the parent
+			// First visit the parent.
 			done = scanner(entry{group: currentGroup, value: value, parentGroups: parentGroups})
 			if done {
 				return true
 			}
-			// Then visit the children
+
+			// Then visit the children.
 			childGroups := make([]string, 0)
 			for childGroup := range nestedDb {
 				childGroups = append(childGroups, childGroup)
 			}
 			sort.Strings(childGroups)
+
 			for _, childGroup := range childGroups {
 				newParentGroups := make([]string, len(parentGroups))
 				copy(newParentGroups, parentGroups)
@@ -317,12 +327,13 @@ func (cm *jsonConfigManager) walk(scanner scanner, db Db) error {
 		return true
 	}
 
-	// Trigger the walking
+	// Trigger the walking.
 	groups := make([]string, 0)
 	for key := range db {
 		groups = append(groups, key)
 	}
 	sort.Strings(groups)
+
 	for _, group := range groups {
 		if walkRecursive(group, []string{}, db[group]) {
 			return nil
@@ -360,7 +371,7 @@ func (cm *jsonConfigManager) getDB() (Db, error) {
 	return result, nil
 }
 
-func getUrls(urlsAny []any) []string {
+func getUrls(urlsAny LeafValues) []string {
 	urls := make([]string, 0, len(urlsAny))
 	for _, u := range urlsAny {
 		urls = append(urls, u.(string))
@@ -406,7 +417,7 @@ func NewTg(db *Db, path []string) (*tg, error) {
 			return nil, fmt.Errorf("no such tap group: %s", strings.Join(path, "."))
 		}
 
-		urlsAny, isLeaf := nestedDb.([]any)
+		urlsAny, isLeaf := nestedDb.(LeafValues)
 		if isLeaf && i != len(path)-1 {
 			return nil, fmt.Errorf("no such tap group: %s", strings.Join(path, "."))
 		}
@@ -414,8 +425,7 @@ func NewTg(db *Db, path []string) (*tg, error) {
 		if isLeaf {
 			tg.urls = getUrls(urlsAny)
 		} else {
-
-			currDb = nestedDb.(map[string]any)
+			currDb = nestedDb.(Db)
 		}
 
 	}
@@ -468,7 +478,7 @@ func (t *tg) Children() ([]TapGroup, error) {
 
 	currDb := *t.db
 	for _, key := range t.path {
-		currDb = currDb[key].(map[string]any)
+		currDb = currDb[key].(Db)
 	}
 
 	result := make([]TapGroup, 0)
