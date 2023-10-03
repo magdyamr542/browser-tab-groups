@@ -9,7 +9,6 @@ import (
 )
 
 func main() {
-	// App
 	app := &cli.App{
 		Name:        "browser-tab-groups",
 		Usage:       "Group urls and open them together",
@@ -23,7 +22,6 @@ func main() {
 		},
 	}
 
-	// Run
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
 	}

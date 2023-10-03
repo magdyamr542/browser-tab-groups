@@ -1,14 +1,13 @@
 # Browser tab groups
 
-Save and open **links** from the command line with ease. A tap group is a collection of links (urls) that belong together.
+Save and open **links** from the command line with ease. A tab group is a collection of links (urls) that belong together.
 
-Example: `work` tap group would contain links for work. `uni` tap group would contain links for uni etc.
+Example: `work` tab group would contain links for work. `uni` tab group would contain links for uni etc.
 
 ## Installation
 
 1. Manually by downloading the binary from the release page
 1. Using go with `go install github.com/magdyamr542/browser-tab-groups@latest  `
-
 
 ## Features
 
@@ -26,9 +25,9 @@ Example: `work` tap group would contain links for work. `uni` tap group would co
 
 1. `br` will print the usage
 1. `br list` to list all saved tab groups
-1. `br add <tap group> <url>` to add the `url` to the tap group `tap group`
-1. `br open <tap group>` to open all `urls` in the tap group `tap group` in the browser
-1. `br open <tap group> <url matching string>` to open the url(s) that _fuzzy match_ `url matching string` in the browser
+1. `br add <tab group> <url>` to add the `url` to the tab group `tab group`
+1. `br open <tab group>` to open all `urls` in the tab group `tab group` in the browser
+1. `br open <tab group> <url matching string>` to open the url(s) that _fuzzy match_ `url matching string` in the browser
 
 ## Workflow looks like this [video](https://s4.gifyu.com/images/browser-tab-groups-1.gif)
 
@@ -47,4 +46,3 @@ Example: `work` tap group would contain links for work. `uni` tap group would co
 
 1.  `br open express` would open the two links under the `express-routing` group in the browser
 1.  `br open express git` would open the link for **express github** because it uses `fuzzy finding` to filter for links based on the user's input
-

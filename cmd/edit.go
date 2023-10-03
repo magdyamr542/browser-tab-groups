@@ -10,18 +10,18 @@ import (
 var EditCmd cli.Command = cli.Command{
 	Name:        "edit",
 	Usage:       "Edit tab groups manually using your editor",
-	Description: "Edit the tap groups manually (JSON editing in you editor)",
+	Description: "Edit the tab groups manually (JSON editing in you editor)",
 	Action: func(cCtx *cli.Context) error {
 
 		jsonCmg, err := configManager.NewJsonConfigManager()
 		if err != nil {
 			return err
 		}
-		return editTapGroups(jsonCmg)
+		return editTabGroups(jsonCmg)
 	},
 }
 
-func editTapGroups(cm configManager.JsonConfigManager) error {
+func editTabGroups(cm configManager.JsonConfigManager) error {
 
 	cfgJson, err := cm.GetConfigJson()
 	if err != nil {

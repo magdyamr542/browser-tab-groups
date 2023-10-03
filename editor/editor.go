@@ -28,7 +28,7 @@ func (e editor) Edit(content []byte) ([]byte, error) {
 		ed = DefaultEditor
 	}
 
-	f, err := os.CreateTemp("", "tap-groups-edit-*.json")
+	f, err := os.CreateTemp("", "tab-groups-edit-*.json")
 	if err != nil {
 		return nil, fmt.Errorf("can't create a temp file for editing: %v", err)
 	}

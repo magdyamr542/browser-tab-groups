@@ -16,7 +16,7 @@ import (
 const Tap = "   "
 
 var (
-	errUrlIsAlreadyInTapGroup error = errors.New("the url is already in the tap group")
+	errUrlIsAlreadyInTabGroup error = errors.New("the url is already in the tab group")
 )
 
 type Db = map[string]any
@@ -29,22 +29,22 @@ type jsonConfigManager struct {
 	homeDir  string
 }
 
-func (cm *jsonConfigManager) GetMatchingTapGroups(matcher func(tapGroupPath []string) bool) ([]TapGroup, error) {
+func (cm *jsonConfigManager) GetMatchingTabGroups(matcher func(tgPath []string) bool) ([]TabGroup, error) {
 
-	tgs := make([]TapGroup, 0)
+	tgs := make([]TabGroup, 0)
 
-	onMatch := func(tg TapGroup) {
+	onMatch := func(tg TabGroup) {
 		tgs = append(tgs, tg)
 	}
 
-	err := cm.ExecForMatchingTapGroup(matcher, onMatch)
+	err := cm.ExecForMatchingTabGroup(matcher, onMatch)
 
 	if err != nil {
 		return nil, err
 	}
 
 	if len(tgs) == 0 {
-		return nil, fmt.Errorf("no matching tap groups found")
+		return nil, fmt.Errorf("no matching tab groups found")
 	}
 
 	return tgs, nil
@@ -74,7 +74,7 @@ func (cm *jsonConfigManager) GetConfigJson() (string, error) {
 	return string(byteValue), nil
 }
 
-func (cm *jsonConfigManager) ExecForMatchingTapGroup(matcher func(tapGroupPath []string) bool, exec func(TapGroup)) error {
+func (cm *jsonConfigManager) ExecForMatchingTabGroup(matcher func(tgPath []string) bool, exec func(TabGroup)) error {
 
 	db, err := cm.getDB()
 	if err != nil {
@@ -102,7 +102,7 @@ func (cm *jsonConfigManager) ExecForMatchingTapGroup(matcher func(tapGroupPath [
 	return retErr
 }
 
-func (cm *jsonConfigManager) AddUrl(url string, tapGroups ...string) error {
+func (cm *jsonConfigManager) AddUrl(url string, tabGroups ...string) error {
 
 	// Validate
 	trimmedUrl := strings.TrimSpace(url)
@@ -115,59 +115,59 @@ func (cm *jsonConfigManager) AddUrl(url string, tapGroups ...string) error {
 		return err
 	}
 
-	// Create the nested tap groups if necessary and add the url to the leaf
-	currentTapGroup := 0
+	// Create the nested tab groups if necessary and add the url to the leaf
+	currentTabGroup := 0
 	currentDb := db
 	added := false
-	for currentTapGroup < len(tapGroups) {
-		tapGroup := tapGroups[currentTapGroup]
-		_, ok := currentDb[tapGroup]
+	for currentTabGroup < len(tabGroups) {
+		tabGroup := tabGroups[currentTabGroup]
+		_, ok := currentDb[tabGroup]
 		if !ok {
-			// Last tap group. This maps to the list of urls
-			if currentTapGroup+1 >= len(tapGroups) {
+			// Last tab group. This maps to the list of urls
+			if currentTabGroup+1 >= len(tabGroups) {
 				added = true
-				currentDb[tapGroup] = []string{url}
+				currentDb[tabGroup] = []string{url}
 			} else {
 				// Go deeper
-				currentDb[tapGroup] = make(Db)
-				currentDb = currentDb[tapGroup].(Db)
+				currentDb[tabGroup] = make(Db)
+				currentDb = currentDb[tabGroup].(Db)
 			}
 		} else {
 			// Key exists.
-			urlsAny, isLeaf := currentDb[tapGroup].(LeafValues)
+			urlsAny, isLeaf := currentDb[tabGroup].(LeafValues)
 			if isLeaf {
-				// User trying to create a new tap group under an existing leaf. Error
-				if currentTapGroup != len(tapGroups)-1 {
-					return fmt.Errorf("can't create %q as a tap group inside %[2]q. (%[2]q already contains urls)",
-						tapGroups[len(tapGroups)-1], tapGroup)
+				// User trying to create a new tab group under an existing leaf. Error
+				if currentTabGroup != len(tabGroups)-1 {
+					return fmt.Errorf("can't create %q as a tab group inside %[2]q. (%[2]q already contains urls)",
+						tabGroups[len(tabGroups)-1], tabGroup)
 				}
 
 				// Add the url to the existing urls
 				currentUrls := getUrls(urlsAny)
 				if helpers.Contains(currentUrls, trimmedUrl) {
-					return errUrlIsAlreadyInTapGroup
+					return errUrlIsAlreadyInTabGroup
 				}
 				currentUrls = append(currentUrls, url)
-				currentDb[tapGroup] = currentUrls
+				currentDb[tabGroup] = currentUrls
 				added = true
 
 			} else {
-				// Current db is the last tapGroup. It doesn't contains any nestings or urls. Add the url here.
-				if len(currentDb[tapGroup].(Db)) == 0 && currentTapGroup+1 >= len(tapGroups) {
-					currentDb[tapGroup] = []string{url}
+				// Current db is the last tabGroup. It doesn't contains any nestings or urls. Add the url here.
+				if len(currentDb[tabGroup].(Db)) == 0 && currentTabGroup+1 >= len(tabGroups) {
+					currentDb[tabGroup] = []string{url}
 					added = true
 				} else {
 					// Go one level deeper.
-					currentDb = currentDb[tapGroup].(Db)
+					currentDb = currentDb[tabGroup].(Db)
 				}
 			}
 		}
-		currentTapGroup += 1
+		currentTabGroup += 1
 	}
 
 	if !added {
-		return fmt.Errorf("can't add url under %q. The path is a container for other tap groups and not for urls.",
-			strings.Join(tapGroups, "->"))
+		return fmt.Errorf("can't add url under %q. The path is a container for other tab groups and not for urls.",
+			strings.Join(tabGroups, "->"))
 	}
 
 	// cm.printDb(db)
@@ -175,7 +175,7 @@ func (cm *jsonConfigManager) AddUrl(url string, tapGroups ...string) error {
 	return cm.refreshStorage(db)
 }
 
-func (cm *jsonConfigManager) RemoveTapGroup(path ...string) error {
+func (cm *jsonConfigManager) RemoveTabGroup(path ...string) error {
 
 	db, err := cm.getDB()
 	if err != nil {
@@ -403,7 +403,7 @@ type tg struct {
 	// The root db.
 	db *Db
 
-	// path to the current TapGroup.
+	// path to the current TabGroup.
 	path []string
 
 	urls []string
@@ -420,12 +420,12 @@ func NewTg(db *Db, path []string) (*tg, error) {
 	for i, key := range path {
 		nestedDb, ok := currDb[key]
 		if !ok {
-			return nil, fmt.Errorf("no such tap group: %s", strings.Join(path, "."))
+			return nil, fmt.Errorf("no such tab group: %s", strings.Join(path, "."))
 		}
 
 		urlsAny, isLeaf := nestedDb.(LeafValues)
 		if isLeaf && i != len(path)-1 {
-			return nil, fmt.Errorf("no such tap group: %s", strings.Join(path, "."))
+			return nil, fmt.Errorf("no such tab group: %s", strings.Join(path, "."))
 		}
 
 		if isLeaf {
@@ -438,8 +438,8 @@ func NewTg(db *Db, path []string) (*tg, error) {
 	return &tg, nil
 }
 
-// tg implements the TapGroup interface.
-// Returns all urls under the given TapGroup.
+// tg implements the TabGroup interface.
+// Returns all urls under the given TabGroup.
 func (tg *tg) Urls() ([]string, error) {
 	if tg.Leaf() {
 		return tg.urls, nil
@@ -462,7 +462,7 @@ func (tg *tg) Urls() ([]string, error) {
 	return urls, nil
 }
 
-// Name of the current TapGroup.
+// Name of the current TabGroup.
 func (tg *tg) Name() string {
 	if len(tg.path) == 0 {
 		return ""
@@ -470,14 +470,14 @@ func (tg *tg) Name() string {
 	return tg.path[len(tg.path)-1]
 }
 
-// Path to the current TapGroup
+// Path to the current TabGroup
 // E.g [work, ticket1, github].
 func (tg *tg) Path() []string {
 	return tg.path
 }
 
-// Returns all children of the current TapGroup.
-func (t *tg) Children() ([]TapGroup, error) {
+// Returns all children of the current TabGroup.
+func (t *tg) Children() ([]TabGroup, error) {
 	if t.Leaf() {
 		return nil, nil
 	}
@@ -487,14 +487,14 @@ func (t *tg) Children() ([]TapGroup, error) {
 		currDb = currDb[key].(Db)
 	}
 
-	// Sort the tap groups.
+	// Sort the tan groups.
 	keys := make([]string, 0)
 	for key := range currDb {
 		keys = append(keys, key)
 	}
 	sort.Strings(keys)
 
-	result := make([]TapGroup, 0)
+	result := make([]TabGroup, 0)
 	for _, key := range keys {
 		tg, err := NewTg(t.db, append(t.path, key))
 		if err != nil {
@@ -506,7 +506,7 @@ func (t *tg) Children() ([]TapGroup, error) {
 	return result, nil
 }
 
-// Formats the TapGroup as a string.
+// Formats the TabGroup as a string.
 func (tg *tg) String(prefix string) (string, error) {
 	var writer strings.Builder
 

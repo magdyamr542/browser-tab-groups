@@ -15,8 +15,8 @@ import (
 
 var OpenCmd cli.Command = cli.Command{
 	Name:        "open",
-	Usage:       "Open a tap group in the browser",
-	Description: "Open a tap group in the browser. This opens all urls in the tap group",
+	Usage:       "Open a tab group in the browser",
+	Description: "Open a tab group in the browser. This opens all urls in the tab group",
 	Aliases:     []string{"o", "op"},
 	Action: func(cCtx *cli.Context) error {
 		jsonCmg, err := configManager.NewJsonConfigManager()
@@ -24,25 +24,25 @@ var OpenCmd cli.Command = cli.Command{
 			return err
 		}
 
-		tapGroups := cCtx.Args().Slice()
-		if len(tapGroups) == 0 {
-			return fmt.Errorf("provide a path to the tap group you want to open (as space separated string)")
+		tabGroups := cCtx.Args().Slice()
+		if len(tabGroups) == 0 {
+			return fmt.Errorf("provide a path to the tab group you want to open (as space separated string)")
 		}
 
-		return openTapGroup(os.Stdout, tapGroups, jsonCmg, browser.NewBrowser())
+		return openTabGroup(os.Stdout, tabGroups, jsonCmg, browser.NewBrowser())
 	},
 }
 
-func openTapGroup(outputW io.Writer, tapGroups []string, cm configManager.ConfigManager, br browser.Browser) error {
+func openTabGroup(outputW io.Writer, tabGroups []string, cm configManager.ConfigManager, br browser.Browser) error {
 
-	matcher := func(tapGroupPath []string) bool {
-		if len(tapGroups) != len(tapGroupPath) {
+	matcher := func(tgPath []string) bool {
+		if len(tabGroups) != len(tgPath) {
 			return false
 		}
 
-		for i, tapGroupLike := range tapGroups {
-			savedTapGroup := tapGroupPath[i]
-			if !fuzzy.Match(strings.ToLower(tapGroupLike), savedTapGroup) {
+		for i, tgLike := range tabGroups {
+			savedTabGroup := tgPath[i]
+			if !fuzzy.Match(strings.ToLower(tgLike), savedTabGroup) {
 				return false
 			}
 		}
@@ -50,7 +50,7 @@ func openTapGroup(outputW io.Writer, tapGroups []string, cm configManager.Config
 		return true
 	}
 
-	tgs, err := cm.GetMatchingTapGroups(matcher)
+	tgs, err := cm.GetMatchingTabGroups(matcher)
 	if err != nil {
 		return err
 	}
@@ -66,7 +66,7 @@ func openTapGroup(outputW io.Writer, tapGroups []string, cm configManager.Config
 	}
 
 	if len(urls) == 0 {
-		return fmt.Errorf("no matching for the given pattern %s", tapGroups)
+		return fmt.Errorf("no matching for the given pattern %s", tabGroups)
 	}
 
 	return br.OpenLinks(urls)

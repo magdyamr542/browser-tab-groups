@@ -13,7 +13,7 @@ var AddCmd cli.Command = cli.Command{
 	Name:        "add",
 	Usage:       "Add a url to a tab group",
 	Description: "Add a url to a tab group. The tab group will be created if it doesn't exist",
-	UsageText: `browser-tab-groups add <tap group path...> <url>
+	UsageText: `browser-tab-groups add <tab group path...> <url>
 
 1. Add "https://wwww.google.com" to tab group one two three:
 		browser-tab-groups add one two three https://wwww.google.com
@@ -35,13 +35,13 @@ var AddCmd cli.Command = cli.Command{
 
 		url := groupsThenUrl[len(groupsThenUrl)-1]
 		groups := groupsThenUrl[:len(groupsThenUrl)-1]
-		return addUrlToTapGroup(os.Stdout, jsonCmg, url, groups...)
+		return addUrlToTabGroup(os.Stdout, jsonCmg, url, groups...)
 
 	},
 }
 
-func addUrlToTapGroup(outputW io.Writer, cm configManager.ConfigManager, url string, tapGroups ...string) error {
-	err := cm.AddUrl(url, tapGroups...)
+func addUrlToTabGroup(outputW io.Writer, cm configManager.ConfigManager, url string, tabGroups ...string) error {
+	err := cm.AddUrl(url, tabGroups...)
 	if err != nil {
 		return err
 	}

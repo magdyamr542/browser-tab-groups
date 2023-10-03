@@ -11,8 +11,8 @@ import (
 
 var RmCmd cli.Command = cli.Command{
 	Name:        "remove",
-	Usage:       "Remove a saved tap group",
-	Description: "Remove a saved tap group using its path",
+	Usage:       "Remove a saved tab group",
+	Description: "Remove a saved tab group using its path",
 	Aliases:     []string{"rm"},
 	Action: func(cCtx *cli.Context) error {
 		jsonCmg, err := configManager.NewJsonConfigManager()
@@ -20,17 +20,17 @@ var RmCmd cli.Command = cli.Command{
 			return err
 		}
 
-		tapGroups := cCtx.Args().Slice()
-		if len(tapGroups) == 0 {
-			return fmt.Errorf("provide a path to the tap group you want to delete (as space separated string)")
+		tabGroups := cCtx.Args().Slice()
+		if len(tabGroups) == 0 {
+			return fmt.Errorf("provide a path to the tab group you want to delete (as space separated string)")
 		}
-		return removeTapGroup(os.Stdout, jsonCmg, tapGroups...)
+		return removeTabGroup(os.Stdout, jsonCmg, tabGroups...)
 	},
 }
 
-// removeTapGroup removes a saved tap group
-func removeTapGroup(outputW io.Writer, cm configManager.ConfigManager, path ...string) error {
-	err := cm.RemoveTapGroup(path...)
+// removeTabGroup removes a saved tab group
+func removeTabGroup(outputW io.Writer, cm configManager.ConfigManager, path ...string) error {
+	err := cm.RemoveTabGroup(path...)
 	if err != nil {
 		return err
 	}

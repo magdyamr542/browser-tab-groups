@@ -19,15 +19,15 @@ var LsCmd cli.Command = cli.Command{
 	Name:        "list",
 	Aliases:     []string{"l", "ls"},
 	Usage:       "List all tab groups",
-	Description: "List all saved tab groups or provide a path and list only the tap groups which fuzzy match the provided path.",
+	Description: "List all saved tab groups or provide a path and list only the tab groups which fuzzy match the provided path.",
 	Flags: []cli.Flag{
 		&cli.BoolFlag{
 			Name:  OnlyUrlsFlag,
 			Value: false,
-			Usage: "Show only the urls without the tap group hierarchy",
+			Usage: "Show only the urls without the tab group hierarchy",
 		},
 	},
-	UsageText: `browser-tab-groups list [command options] [tap group path...]
+	UsageText: `browser-tab-groups list [command options] [tab group path...]
 
 1. List all tab groups:
 		browser-tab-groups list
@@ -43,32 +43,32 @@ var LsCmd cli.Command = cli.Command{
 		}
 
 		// The user can filter for certain entries using Fuzzy matching.
-		tapGroups := cCtx.Args().Slice()
+		tabGroups := cCtx.Args().Slice()
 		onlyUrls := cCtx.Bool(OnlyUrlsFlag)
 
-		return listTapGroups(os.Stdout, jsonCmg, tapGroups, onlyUrls)
+		return listTabGroups(os.Stdout, jsonCmg, tabGroups, onlyUrls)
 	},
 }
 
-func listTapGroups(outputW io.Writer, cm configManager.ConfigManager, tapGroups []string, onlyUrls bool) error {
+func listTabGroups(outputW io.Writer, cm configManager.ConfigManager, tabGroups []string, onlyUrls bool) error {
 	matchAll := false
-	if len(tapGroups) == 0 {
+	if len(tabGroups) == 0 {
 		matchAll = true
 	}
 
-	matcher := func(tapGroupPath []string) bool {
+	matcher := func(tabGroupPath []string) bool {
 		if matchAll {
 			// Match the roots. They cover all children in their urls.
-			return len(tapGroupPath) == 1
+			return len(tabGroupPath) == 1
 		}
 
-		if len(tapGroups) != len(tapGroupPath) {
+		if len(tabGroups) != len(tabGroupPath) {
 			return false
 		}
 
-		for i, tapGroupLike := range tapGroups {
-			savedTapGroup := tapGroupPath[i]
-			if !fuzzy.Match(strings.ToLower(tapGroupLike), savedTapGroup) {
+		for i, tgLike := range tabGroups {
+			savedTabGroup := tabGroupPath[i]
+			if !fuzzy.Match(strings.ToLower(tgLike), savedTabGroup) {
 				return false
 			}
 		}
@@ -76,13 +76,13 @@ func listTapGroups(outputW io.Writer, cm configManager.ConfigManager, tapGroups 
 		return true
 	}
 
-	tgs, err := cm.GetMatchingTapGroups(matcher)
+	tgs, err := cm.GetMatchingTabGroups(matcher)
 	if err != nil {
 		return err
 	}
 
 	if len(tgs) == 0 {
-		return fmt.Errorf("no matching for the given pattern %s", tapGroups)
+		return fmt.Errorf("no matching for the given pattern %s", tabGroups)
 	}
 
 	if onlyUrls {
