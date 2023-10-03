@@ -1,28 +1,30 @@
 package main
 
 import (
+	"log"
 	"os"
 
 	"github.com/magdyamr542/browser-tab-groups/cmd"
-
-	"github.com/alecthomas/kong"
+	"github.com/urfave/cli/v2"
 )
 
-var CLI struct {
-	Ls   cmd.LsCmd   `cmd:"" help:"List all tab groups" aliases:"l,ls,list"`
-	Add  cmd.AddCmd  `cmd:"" help:"Add a new url to a tap group"`
-	Open cmd.OpenCmd `cmd:"" help:"Open a tap group in the browser. This opens all urls in the tap group" aliases:"o,op"`
-	Rm   cmd.RmCmd   `cmd:"" help:"Remove a saved tap group" aliases:"remove"`
-	Edit cmd.EditCmd `cmd:"" help:"Edit the tap groups manually (JSON editing in you editor)" aliases:"edit"`
-}
-
 func main() {
-	// If running without any extra arguments, default to the --help flag
-	if len(os.Args) < 2 {
-		os.Args = append(os.Args, "--help")
+	// App
+	app := &cli.App{
+		Name:        "browser-tab-groups",
+		Usage:       "Group urls and open them together",
+		Description: "Save grouped urls from the command line. Open multiple urls, which are grouped together. Or a single url using its group path",
+		Commands: []*cli.Command{
+			&cmd.AddCmd,
+			&cmd.LsCmd,
+			&cmd.EditCmd,
+			&cmd.RmCmd,
+			&cmd.OpenCmd,
+		},
 	}
 
-	ctx := kong.Parse(&CLI)
-	err := ctx.Run()
-	ctx.FatalIfErrorf(err)
+	// Run
+	if err := app.Run(os.Args); err != nil {
+		log.Fatal(err)
+	}
 }

@@ -8,21 +8,29 @@ import (
 
 	"github.com/magdyamr542/browser-tab-groups/browser"
 	"github.com/magdyamr542/browser-tab-groups/configManager"
+	"github.com/urfave/cli/v2"
 
 	"github.com/lithammer/fuzzysearch/fuzzy"
 )
 
-// Adding a new tap group
-type OpenCmd struct {
-	TapGroups []string `arg:"" name:"tap groups" help:"the path to the tap group to open"`
-}
+var OpenCmd cli.Command = cli.Command{
+	Name:        "open",
+	Usage:       "Open a tap group in the browser",
+	Description: "Open a tap group in the browser. This opens all urls in the tap group",
+	Aliases:     []string{"o", "op"},
+	Action: func(cCtx *cli.Context) error {
+		jsonCmg, err := configManager.NewJsonConfigManager()
+		if err != nil {
+			return err
+		}
 
-func (open *OpenCmd) Run() error {
-	jsonCmg, err := configManager.NewJsonConfigManager()
-	if err != nil {
-		return err
-	}
-	return openTapGroup(os.Stdout, open.TapGroups, jsonCmg, browser.NewBrowser())
+		tapGroups := cCtx.Args().Slice()
+		if len(tapGroups) == 0 {
+			return fmt.Errorf("provide a path to the tap group you want to open (as space separated string)")
+		}
+
+		return openTapGroup(os.Stdout, tapGroups, jsonCmg, browser.NewBrowser())
+	},
 }
 
 func openTapGroup(outputW io.Writer, tapGroups []string, cm configManager.ConfigManager, br browser.Browser) error {

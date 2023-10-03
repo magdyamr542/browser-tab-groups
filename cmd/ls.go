@@ -8,24 +8,48 @@ import (
 
 	"github.com/lithammer/fuzzysearch/fuzzy"
 	"github.com/magdyamr542/browser-tab-groups/configManager"
+	"github.com/urfave/cli/v2"
 )
 
-// Listing tap groups with their urls
-type LsCmd struct {
-	OnlyUrls  bool     `help:"output urls without tap groups"`
-	TapGroups []string `arg:"" optional:"" name:"path to tap group" help:"the path to the tap group to remove"`
+const (
+	OnlyUrlsFlag = "only-urls"
+)
+
+var LsCmd cli.Command = cli.Command{
+	Name:        "list",
+	Aliases:     []string{"l", "ls"},
+	Usage:       "List all tab groups",
+	Description: "List all saved tab groups or provide a path and list only the tap groups which fuzzy match the provided path.",
+	Flags: []cli.Flag{
+		&cli.BoolFlag{
+			Name:  OnlyUrlsFlag,
+			Value: false,
+			Usage: "Show only the urls without the tap group hierarchy",
+		},
+	},
+	UsageText: `browser-tab-groups list [command options] [tap group path...]
+
+1. List all tab groups:
+		browser-tab-groups list
+
+2. List tab groups with using a path with fuzzy matching:
+		browser-tab-groups list frst scnd thrd
+`,
+	Action: func(cCtx *cli.Context) error {
+
+		jsonCmg, err := configManager.NewJsonConfigManager()
+		if err != nil {
+			return err
+		}
+
+		// The user can filter for certain entries using Fuzzy matching.
+		tapGroups := cCtx.Args().Slice()
+		onlyUrls := cCtx.Bool(OnlyUrlsFlag)
+
+		return listTapGroups(os.Stdout, jsonCmg, tapGroups, onlyUrls)
+	},
 }
 
-func (ls *LsCmd) Run() error {
-
-	jsonCmg, err := configManager.NewJsonConfigManager()
-	if err != nil {
-		return err
-	}
-	return listTapGroups(os.Stdout, jsonCmg, ls.TapGroups, ls.OnlyUrls)
-}
-
-// listTapGroups lists all tap groups
 func listTapGroups(outputW io.Writer, cm configManager.ConfigManager, tapGroups []string, onlyUrls bool) error {
 	matchAll := false
 	if len(tapGroups) == 0 {

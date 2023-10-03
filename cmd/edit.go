@@ -3,18 +3,22 @@ package cmd
 import (
 	"github.com/magdyamr542/browser-tab-groups/configManager"
 	"github.com/magdyamr542/browser-tab-groups/editor"
+	"github.com/urfave/cli/v2"
 )
 
 // Editing the storage manually
-type EditCmd struct {
-}
+var EditCmd cli.Command = cli.Command{
+	Name:        "edit",
+	Usage:       "Edit tab groups manually using your editor",
+	Description: "Edit the tap groups manually (JSON editing in you editor)",
+	Action: func(cCtx *cli.Context) error {
 
-func (ls *EditCmd) Run() error {
-	jsonCmg, err := configManager.NewJsonConfigManager()
-	if err != nil {
-		return err
-	}
-	return editTapGroups(jsonCmg)
+		jsonCmg, err := configManager.NewJsonConfigManager()
+		if err != nil {
+			return err
+		}
+		return editTapGroups(jsonCmg)
+	},
 }
 
 func editTapGroups(cm configManager.JsonConfigManager) error {

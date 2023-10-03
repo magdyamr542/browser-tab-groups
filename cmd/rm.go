@@ -1,24 +1,31 @@
 package cmd
 
 import (
+	"fmt"
 	"io"
 	"os"
 
 	"github.com/magdyamr542/browser-tab-groups/configManager"
+	"github.com/urfave/cli/v2"
 )
 
-// Removing a tap group
-type RmCmd struct {
-	TapGroups []string `arg:"" name:"path to tap group" help:"the path to the tap group to remove"`
-}
+var RmCmd cli.Command = cli.Command{
+	Name:        "remove",
+	Usage:       "Remove a saved tap group",
+	Description: "Remove a saved tap group using its path",
+	Aliases:     []string{"rm"},
+	Action: func(cCtx *cli.Context) error {
+		jsonCmg, err := configManager.NewJsonConfigManager()
+		if err != nil {
+			return err
+		}
 
-func (rm *RmCmd) Run() error {
-
-	jsonCmg, err := configManager.NewJsonConfigManager()
-	if err != nil {
-		return err
-	}
-	return removeTapGroup(os.Stdout, jsonCmg, rm.TapGroups...)
+		tapGroups := cCtx.Args().Slice()
+		if len(tapGroups) == 0 {
+			return fmt.Errorf("provide a path to the tap group you want to delete (as space separated string)")
+		}
+		return removeTapGroup(os.Stdout, jsonCmg, tapGroups...)
+	},
 }
 
 // removeTapGroup removes a saved tap group

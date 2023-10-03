@@ -6,28 +6,38 @@ import (
 	"os"
 
 	"github.com/magdyamr542/browser-tab-groups/configManager"
+	"github.com/urfave/cli/v2"
 )
 
-// Adding a new tap group
-type AddCmd struct {
-	GroupsThenUrl []string `arg:"" name:"tap groups then the url" help:"the tap groups to add the url to. groups are hierarchical"`
-}
+var AddCmd cli.Command = cli.Command{
+	Name:        "add",
+	Usage:       "Add a url to a tab group",
+	Description: "Add a url to a tab group. The tab group will be created if it doesn't exist",
+	UsageText: `browser-tab-groups add <tap group path...> <url>
 
-func (add *AddCmd) Run() error {
+1. Add "https://wwww.google.com" to tab group one two three:
+		browser-tab-groups add one two three https://wwww.google.com
+`,
+	Action: func(cCtx *cli.Context) error {
+		jsonCmg, err := configManager.NewJsonConfigManager()
+		if err != nil {
+			return err
+		}
 
-	example := `1. browser-tab-group add work issue1 https://www.google.com (url is nested under 2 groups)
-2. browser-tab-group add work https://www.google.com (url is nested under 1 group)
-`
-	if len(add.GroupsThenUrl) == 1 {
-		return fmt.Errorf("wrong usage. Needs at least one group and a url (2 inputs)\n%s", example)
-	}
-	url := add.GroupsThenUrl[len(add.GroupsThenUrl)-1]
-	groups := add.GroupsThenUrl[:len(add.GroupsThenUrl)-1]
-	jsonCmg, err := configManager.NewJsonConfigManager()
-	if err != nil {
-		return err
-	}
-	return addUrlToTapGroup(os.Stdout, jsonCmg, url, groups...)
+		groupsThenUrl := cCtx.Args().Slice()
+		if len(groupsThenUrl) == 0 {
+			return fmt.Errorf("you need to provide the tab group path then the url")
+		}
+
+		if len(groupsThenUrl) == 1 {
+			return fmt.Errorf("you need to provide a url to add to the given tab group")
+		}
+
+		url := groupsThenUrl[len(groupsThenUrl)-1]
+		groups := groupsThenUrl[:len(groupsThenUrl)-1]
+		return addUrlToTapGroup(os.Stdout, jsonCmg, url, groups...)
+
+	},
 }
 
 func addUrlToTapGroup(outputW io.Writer, cm configManager.ConfigManager, url string, tapGroups ...string) error {
