@@ -1,24 +1,17 @@
-package browser
+package opener
 
 import (
 	"os/exec"
 	"runtime"
 )
 
-type Browser interface {
-	//OpenLink opens a link in the browser
-	OpenLink(link string) error
-
-	//OpenLinks opens a link in the browser
-	OpenLinks(links []string) error
-}
-
-// browser is the internal implementation for the Browser interface
+// browser implements the Opener interface and opens the links in the browser.
 type browser struct {
 }
 
 // OpenLink opens a link in the browser
-func (br *browser) OpenLink(link string) error {
+func (br *browser) OpenLink(request Request) error {
+	link := request.Link
 
 	var args []string
 	switch runtime.GOOS {
@@ -34,10 +27,10 @@ func (br *browser) OpenLink(link string) error {
 }
 
 // OpenLinks opens all links in the browser
-func (br *browser) OpenLinks(links []string) error {
+func (br *browser) OpenLinks(requests []Request) error {
 
-	for _, link := range links {
-		err := br.OpenLink(link)
+	for _, r := range requests {
+		err := br.OpenLink(r)
 		if err != nil {
 			return err
 		}
@@ -46,6 +39,6 @@ func (br *browser) OpenLinks(links []string) error {
 	return nil
 }
 
-func NewBrowser() Browser {
+func NewBrowser() Opener {
 	return &browser{}
 }

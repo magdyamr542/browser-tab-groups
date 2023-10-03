@@ -10,6 +10,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/magdyamr542/browser-tab-groups/colors"
 	"github.com/magdyamr542/browser-tab-groups/helpers"
 )
 
@@ -510,7 +511,7 @@ func (t *tg) Children() ([]TabGroup, error) {
 func (tg *tg) String(prefix string) (string, error) {
 	var writer strings.Builder
 
-	writer.WriteString(fmt.Sprintf("%s%s\n", prefix, asBold(tg.Name())))
+	writer.WriteString(fmt.Sprintf("%s%s\n", prefix, colors.Bold(tg.Name())))
 
 	if tg.Leaf() {
 		for i, url := range tg.urls {
@@ -538,8 +539,4 @@ func (tg *tg) String(prefix string) (string, error) {
 		}
 	}
 	return writer.String(), nil
-}
-
-func asBold(str string) string {
-	return "\x1b[1m" + str + "\x1b[0m"
 }
