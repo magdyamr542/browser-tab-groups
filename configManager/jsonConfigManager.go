@@ -487,8 +487,15 @@ func (t *tg) Children() ([]TapGroup, error) {
 		currDb = currDb[key].(Db)
 	}
 
-	result := make([]TapGroup, 0)
+	// Sort the tap groups.
+	keys := make([]string, 0)
 	for key := range currDb {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+
+	result := make([]TapGroup, 0)
+	for _, key := range keys {
 		tg, err := NewTg(t.db, append(t.path, key))
 		if err != nil {
 			return nil, err
