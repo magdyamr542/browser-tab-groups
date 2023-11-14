@@ -497,7 +497,10 @@ func (t *tg) Children() ([]TabGroup, error) {
 
 	result := make([]TabGroup, 0)
 	for _, key := range keys {
-		tg, err := NewTg(t.db, append(t.path, key))
+		currKey := make([]string, len(t.path))
+		copy(currKey, t.path)
+		currKey = append(currKey, key)
+		tg, err := NewTg(t.db, currKey)
 		if err != nil {
 			return nil, err
 		}

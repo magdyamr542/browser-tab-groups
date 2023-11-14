@@ -20,5 +20,13 @@
       "program": "${workspaceFolder}/main.go",
       "args": ["add", "1", "https://ok.com"]
     }
+    {
+      "name": "Debugging ls",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "program": "${workspaceFolder}/main.go",
+      "args": ["ls", "inv", "vers"]
+    }
   ]
 }
